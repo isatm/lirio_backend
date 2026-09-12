@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { PassportModule } from '@nestjs/passport';
+
 import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
-
 import { User, UserSchema } from './schema/user.schema.js';
-import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { MongooseModule } from '@nestjs/mongoose';
         schema: UserSchema,
       },
     ]),
+    PassportModule,
+    AuthModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],
