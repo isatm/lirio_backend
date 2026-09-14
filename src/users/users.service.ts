@@ -10,6 +10,8 @@ import { Model } from 'mongoose';
 
 import { User, UserDocument } from './schema/user.schema.js';
 import { RegisterUserDto } from './dto/register_dto.js';
+import { CreateUserDto } from './dto/create_user.dto.js';
+import { UpdateUserDto } from './dto/update_user.dto.js';
 
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login_dto.js';
@@ -109,13 +111,101 @@ async login(loginUserDto: LoginUserDto) {
     return this.userModel.findById(id).select('-password');
   }
 
-  async update(id: string, data: Partial<User>) {
+  /** El administrador crea cuentas con el rol que elija. */
+  async createByAdmin(createUserDto: CreateUserDto) {
+    const { email, user_name, password, role } = createUserDto;
+
+    await this.ensureCredentialsFree(email, user_name);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.userModel.create({
+      email: email.toLowerCase(),
+      user_name: user_name.trim(),
+      password: hashedPassword,
+      role,
+    });
+
+    return {
+      message: 'Usuario creado correctamente',
+      user: {
+        id: user._id,
+        email: user.email,
+        user_name: user.user_name,
+        role: user.role,
+      },
+    };
+  }
+
+  async update(id: string, data: UpdateUserDto) {
+    const conditions: Record<string, string>[] = [];
+
+    if (data.email) {
+      conditions.push({ email: data.email });
+    }
+
+    if (data.user_name) {
+      conditions.push({ user_name: data.user_name });
+    }
+
+    if (conditions.length > 0) {
+      const existing = await this.userModel.findOne({
+        $or: conditions,
+        _id: { $ne: id },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          'El email o nombre de usuario ya está registrado',
+        );
+      }
+    }
+
+    const update: Partial<User> = {};
+
+    if (data.user_name !== undefined) {
+      update.user_name = data.user_name.trim();
+    }
+
+    if (data.email !== undefined) {
+      update.email = data.email.toLowerCase();
+    }
+
+    if (data.role !== undefined) {
+      update.role = data.role;
+    }
+
     return this.userModel
-      .findByIdAndUpdate(id, data, {
+      .findByIdAndUpdate(id, update, {
         new: true,
         runValidators: true,
       })
       .select('-password');
+  }
+
+  /** Verifica que el email o el nombre de usuario no estén en uso. */
+  private async ensureCredentialsFree(email?: string, userName?: string) {
+    const conditions: Record<string, string>[] = [];
+
+    if (email) {
+      conditions.push({ email: email.toLowerCase() });
+    }
+
+    if (userName) {
+      conditions.push({ user_name: userName.trim() });
+    }
+
+    if (conditions.length === 0) {
+      return;
+    }
+
+    const existing = await this.userModel.findOne({ $or: conditions });
+
+    if (existing) {
+      throw new ConflictException(
+        'El email o nombre de usuario ya está registrado',
+      );
+    }
   }
 
   async updateProfile(

@@ -17,7 +17,8 @@ import { RegisterUserDto } from './dto/register_dto.js';
 import { LoginUserDto } from './dto/login_dto.js';
 import { UpdateProfileDto } from './dto/update_profile.dto.js';
 import { UpdatePasswordDto } from './dto/update_password.dto.js';
-import { User } from './schema/user.schema.js';
+import { CreateUserDto } from './dto/create_user.dto.js';
+import { UpdateUserDto } from './dto/update_user.dto.js';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
@@ -80,6 +81,13 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('ADMIN')
+    @Post()
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createByAdmin(createUserDto);
+  }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('ADMIN')
     @Get()
   findAll() {
     return this.usersService.findAll();
@@ -97,7 +105,7 @@ export class UsersController {
   @Roles('ADMIN')
   update(
     @Param('id') id: string,
-    @Body() data: Partial<User>,
+    @Body() data: UpdateUserDto,
   ) {
     return this.usersService.update(id, data);
   }
