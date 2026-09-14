@@ -6,12 +6,17 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+
+import type { Request } from 'express';
 
 import { UsersService } from './users.service.js';
 import { RegisterUserDto } from './dto/register_dto.js';
 import { LoginUserDto } from './dto/login_dto.js';
+import { UpdateProfileDto } from './dto/update_profile.dto.js';
+import { UpdatePasswordDto } from './dto/update_password.dto.js';
 import { User } from './schema/user.schema.js';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -31,6 +36,46 @@ export class UsersController {
 @Post('login')
   login(@Body() loginUserDto: LoginUserDto) {
     return this.usersService.login(loginUserDto);
+  }
+
+@Get('me')
+    @UseGuards(JwtAuthGuard)
+  me(@Req() request: Request) {
+    return this.usersService.findOne(
+      (request.user as { id: string }).id,
+    );
+  }
+
+    @Patch('me')
+    @UseGuards(JwtAuthGuard)
+  updateMe(
+    @Req() request: Request,
+    @Body() data: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(
+      (request.user as { id: string }).id,
+      data,
+    );
+  }
+
+    @Patch('me/password')
+    @UseGuards(JwtAuthGuard)
+  updatePassword(
+    @Req() request: Request,
+    @Body() data: UpdatePasswordDto,
+  ) {
+    return this.usersService.updatePassword(
+      (request.user as { id: string }).id,
+      data.new_password,
+    );
+  }
+
+    @Delete('me')
+    @UseGuards(JwtAuthGuard)
+  removeMe(@Req() request: Request) {
+    return this.usersService.removeAccount(
+      (request.user as { id: string }).id,
+    );
   }
 
     @UseGuards(JwtAuthGuard, RolesGuard)

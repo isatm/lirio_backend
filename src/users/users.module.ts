@@ -6,6 +6,7 @@ import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
 import { User, UserSchema } from './schema/user.schema.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { PostsModule } from '../posts/posts.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthModule } from '../auth/auth.module.js';
     ]),
     PassportModule,
     AuthModule,
+    PostsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

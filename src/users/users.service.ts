@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -14,6 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login_dto.js';
 
 import { AuthService } from '../auth/auth.service.js';
+import { PostsService } from '../posts/posts.service.js';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +23,7 @@ export class UsersService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly authService: AuthService,
+    private readonly postsService: PostsService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -113,6 +116,78 @@ async login(loginUserDto: LoginUserDto) {
         runValidators: true,
       })
       .select('-password');
+  }
+
+  async updateProfile(
+    id: string,
+    data: {
+      user_name?: string;
+      email?: string;
+    },
+  ) {
+    const conditions: Record<string, string>[] = [];
+
+    if (data.email) {
+      conditions.push({ email: data.email });
+    }
+
+    if (data.user_name) {
+      conditions.push({ user_name: data.user_name });
+    }
+
+    if (conditions.length > 0) {
+      const existing = await this.userModel.findOne({
+        $or: conditions,
+        _id: { $ne: id },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          'El email o nombre de usuario ya está registrado',
+        );
+      }
+    }
+
+    const update: Partial<User> = {};
+
+    if (data.user_name !== undefined) {
+      update.user_name = data.user_name;
+    }
+
+    if (data.email !== undefined) {
+      update.email = data.email;
+    }
+
+    const user = await this.userModel
+      .findByIdAndUpdate(id, update, {
+        new: true,
+        runValidators: true,
+      })
+      .select('-password');
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return user;
+  }
+
+  async updatePassword(id: string, newPassword: string) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.userModel.findByIdAndUpdate(id, {
+      password: hashedPassword,
+    });
+
+    return {
+      message: 'Contraseña actualizada correctamente',
+    };
+  }
+
+  async removeAccount(id: string) {
+    await this.postsService.removeAllByUser(id);
+
+    return this.remove(id);
   }
 
   async remove(id: string) {
