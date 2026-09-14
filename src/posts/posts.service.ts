@@ -64,6 +64,10 @@ export class PostsService {
     };
   }
 
+  async removeAllByUser(userId: string) {
+    return this.postModel.deleteMany({ user_id: userId });
+  }
+
   async remove(id: string) {
     const post = await this.postModel.findByIdAndDelete(id);
 

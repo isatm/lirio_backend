@@ -28,7 +28,7 @@ import { JwtStrategy } from './jwt.strategy.js';
 
       useFactory: (configService: ConfigService) => ({
 
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('JWT_SECRET') || 'secret-lirio',
 
         signOptions: {
           expiresIn: '1d',
