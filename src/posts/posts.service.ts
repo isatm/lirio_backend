@@ -18,9 +18,14 @@ export class PostsService {
     private readonly postModel: Model<PostDocument>,
   ) {}
 
-  async create(createPostDto: CreatePostDto, userId: string) {
+  async create(
+    createPostDto: CreatePostDto,
+    userId: string,
+    imageUrl: string,
+  ) {
     const post = await this.postModel.create({
       ...createPostDto,
+      image: imageUrl,
       user_id: userId,
     });
 

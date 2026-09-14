@@ -12,6 +12,7 @@ import {
 
 import { AuthModule } from '../auth/auth.module.js';
 
+import { CloudinaryService } from './cloudinary/cloudinary.service.js';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -26,7 +27,7 @@ import { AuthModule } from '../auth/auth.module.js';
 
   controllers: [PostsController],
 
-  providers: [PostsService],
+  providers: [PostsService, CloudinaryService],
 
   exports: [PostsService],
 })
