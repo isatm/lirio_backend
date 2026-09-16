@@ -7,20 +7,20 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
-  @IsEmail()
-  @IsNotEmpty()
+  @IsEmail({}, { message: 'Correo inválido' })
+  @IsNotEmpty({ message: 'El email es obligatorio' })
   email: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(3)
+  @IsString({ message: 'Debe ser un texto' })
+  @IsNotEmpty({ message: 'El nombre es obligatorio' })
+  @MinLength(3, { message: 'Mínimo 3 caracteres' })
   user_name: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(6)
+  @IsString({ message: 'Debe ser un texto' })
+  @IsNotEmpty({ message: 'La contraseña es obligatoria' })
+  @MinLength(6, { message: 'Mínimo 6 caracteres' })
   password: string;
 
-  @IsEnum(['USER', 'ADMIN'])
+  @IsEnum(['USER', 'ADMIN'], { message: 'Rol inválido' })
   role: 'USER' | 'ADMIN';
 }

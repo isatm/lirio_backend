@@ -8,15 +8,15 @@ import {
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsEmail()
+  @IsEmail({}, { message: 'Correo inválido' })
   email?: string;
 
   @IsOptional()
-  @IsString()
-  @MinLength(3)
+  @IsString({ message: 'Debe ser un texto' })
+  @MinLength(3, { message: 'Mínimo 3 caracteres' })
   user_name?: string;
 
   @IsOptional()
-  @IsEnum(['USER', 'ADMIN'])
+  @IsEnum(['USER', 'ADMIN'], { message: 'Rol inválido' })
   role?: 'USER' | 'ADMIN';
 }

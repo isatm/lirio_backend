@@ -1,14 +1,17 @@
 import {
   IsNotEmpty,
   IsString,
+  MaxLength,
 } from 'class-validator';
 
 export class CreatePostDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Debe ser un texto' })
+  @IsNotEmpty({ message: 'El título es obligatorio' })
+  @MaxLength(100, { message: 'Máximo 100 caracteres' })
   title: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Debe ser un texto' })
+  @IsNotEmpty({ message: 'La descripción es obligatoria' })
+  @MaxLength(500, { message: 'Máximo 500 caracteres' })
   description: string;
 }
