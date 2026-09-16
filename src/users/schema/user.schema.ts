@@ -26,6 +26,18 @@ export class User {
     required: true,
   })
   password: string;
+
+  @Prop({
+    default: '',
+    trim: true,
+  })
+  bio?: string;
+
+  @Prop({
+    type: [String],
+    default: [],
+  })
+  preferred_categories?: string[];
   
   @Prop({
   required: true,

@@ -50,6 +50,8 @@ export class UsersService {
       email,
       user_name,
       password: hashedPassword,
+      bio: registerUserDto.bio ?? '',
+      preferred_categories: registerUserDto.preferred_categories ?? [],
     });
 
     return {
@@ -58,6 +60,8 @@ export class UsersService {
         id: user._id,
         email: user.email,
         user_name: user.user_name,
+        bio: user.bio,
+        preferred_categories: user.preferred_categories,
       },
     };
   }
@@ -99,6 +103,8 @@ async login(loginUserDto: LoginUserDto) {
       email: user.email,
       user_name: user.user_name,
       role: user.role,
+      bio: user.bio,
+      preferred_categories: user.preferred_categories,
     },
   };
 }
@@ -213,6 +219,7 @@ async login(loginUserDto: LoginUserDto) {
     data: {
       user_name?: string;
       email?: string;
+      bio?: string;
     },
   ) {
     const conditions: Record<string, string>[] = [];
@@ -246,6 +253,10 @@ async login(loginUserDto: LoginUserDto) {
 
     if (data.email !== undefined) {
       update.email = data.email;
+    }
+
+    if (data.bio !== undefined) {
+      update.bio = data.bio;
     }
 
     const user = await this.userModel
