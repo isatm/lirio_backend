@@ -115,6 +115,14 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  // En users.controller.ts — agregar ANTES del @Get(':id') restringido a ADMIN
+  // (el orden importa en NestJS: rutas más específicas van primero)
+  @Get(':id/profile')
+  @UseGuards(JwtAuthGuard)
+  profile(@Param('id') id: string) {
+    return this.usersService.findPublicProfile(id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')

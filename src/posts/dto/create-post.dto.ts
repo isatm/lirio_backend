@@ -1,4 +1,5 @@
 import {
+  IsMongoId,
   IsNotEmpty,
   IsString,
   MaxLength,
@@ -14,4 +15,8 @@ export class CreatePostDto {
   @IsNotEmpty({ message: 'La descripción es obligatoria' })
   @MaxLength(500, { message: 'Máximo 500 caracteres' })
   description: string;
+
+  @IsMongoId({ message: 'La categoría no es válida' })
+  @IsNotEmpty({ message: 'La categoría es obligatoria' })
+  category_id: string;
 }

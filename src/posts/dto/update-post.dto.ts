@@ -1,4 +1,5 @@
 import {
+  IsMongoId,
   IsOptional,
   IsString,
   IsUrl,
@@ -20,4 +21,8 @@ export class UpdatePostDto {
   @IsString({ message: 'Debe ser un texto' })
   @MaxLength(500, { message: 'Máximo 500 caracteres' })
   description?: string;
+
+  @IsOptional()
+  @IsMongoId({ message: 'La categoría no es válida' })
+  category_id?: string;
 }
