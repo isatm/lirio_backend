@@ -82,16 +82,23 @@ export class UsersController {
 
     @Get('suggestions')
     @UseGuards(JwtAuthGuard)
-  suggestions(@Query('limit') limit?: string) {
+  suggestions(
+    @Query('limit') limit?: string,
+    @Req() request?: Request,
+  ) {
     return this.usersService.suggestions(
       parseInt(limit ?? '3', 10) || 3,
+      (request?.user as { id: string } | undefined)?.id,
     );
   }
 
     @Get('search')
     @UseGuards(JwtAuthGuard)
-  search(@Query('q') q?: string) {
-    return this.usersService.search(q ?? '');
+  search(@Query('q') q?: string, @Query('limit') limit?: string) {
+    return this.usersService.search(
+      q ?? '',
+      parseInt(limit ?? '', 10) || undefined,
+    );
   }
 
     @UseGuards(JwtAuthGuard, RolesGuard)

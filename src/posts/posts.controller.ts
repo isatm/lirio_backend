@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post as HttpPost,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -76,6 +77,15 @@ async create(
   @Get()
   findAll() {
     return this.postsService.findAll();
+  }
+
+  @Get('feed')
+  @UseGuards(JwtAuthGuard)
+  feed(@Query('limit') limit?: string, @Req() request?: Request) {
+    return this.postsService.findFeed(
+      (request?.user as { id: string } | undefined)?.id,
+      parseInt(limit ?? '', 10) || undefined,
+    );
   }
 
   @Get(':id')

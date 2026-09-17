@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { User, UserDocument } from './schema/user.schema.js';
 import { RegisterUserDto } from './dto/register_dto.js';
@@ -114,8 +114,9 @@ async login(loginUserDto: LoginUserDto) {
   }
 
   /** Busca cuentas por nombre de usuario, correo o bio. */
-  async search(q: string) {
+  async search(q: string, limit?: number) {
     const term = q.trim();
+    const size = Math.min(Math.max(limit ?? 10, 1), 20);
 
     if (!term) {
       return [];
@@ -133,17 +134,70 @@ async login(loginUserDto: LoginUserDto) {
         ],
       })
       .select('-password')
-      .limit(20);
+      .limit(size);
   }
 
-  /** Cuentas aleatorias para mostrar como sugerencias. */
-  async suggestions(limit: number) {
+  /**
+   * Cuentas sugeridas: primero las que comparten categorías preferidas
+   * con el usuario actual (máximo 4) y se completa con cuentas aleatorias.
+   */
+  async suggestions(limit: number, currentUserId?: string) {
     const size = Math.min(Math.max(limit, 1), 20);
+    const prefCount = Math.min(size, 4);
 
-    return this.userModel.aggregate([
-      { $sample: { size } },
+    let matched: any[] = [];
+    let currentObjectId: Types.ObjectId | null = null;
+
+    if (currentUserId) {
+      currentObjectId = new Types.ObjectId(currentUserId);
+    }
+
+    if (currentObjectId) {
+      const current = await this.userModel
+        .findById(currentObjectId)
+        .select('preferred_categories');
+
+      const preferred = current?.preferred_categories ?? [];
+
+      if (preferred.length > 0) {
+        matched = await this.userModel.aggregate([
+          {
+            $match: {
+              _id: { $ne: currentObjectId },
+              preferred_categories: { $in: preferred },
+            },
+          },
+          {
+            $addFields: {
+              matches: {
+                $size: {
+                  $setIntersection: ['$preferred_categories', preferred],
+                },
+              },
+            },
+          },
+          { $sort: { matches: -1, createdAt: -1 } },
+          { $limit: prefCount },
+          { $project: { password: 0 } },
+        ]);
+      }
+    }
+
+    const matchedIds = matched.map((user) => user._id);
+
+    const random = await this.userModel.aggregate([
+      {
+        $match: {
+          ...(currentObjectId
+            ? { _id: { $nin: [currentObjectId, ...matchedIds] } }
+            : {}),
+        },
+      },
+      { $sample: { size: Math.max(size - matchedIds.length, 0) } },
       { $project: { password: 0 } },
     ]);
+
+    return [...matched, ...random].slice(0, size);
   }
 
   async findOne(id: string) {
