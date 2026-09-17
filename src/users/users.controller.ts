@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -77,6 +78,20 @@ export class UsersController {
     return this.usersService.removeAccount(
       (request.user as { id: string }).id,
     );
+  }
+
+    @Get('suggestions')
+    @UseGuards(JwtAuthGuard)
+  suggestions(@Query('limit') limit?: string) {
+    return this.usersService.suggestions(
+      parseInt(limit ?? '3', 10) || 3,
+    );
+  }
+
+    @Get('search')
+    @UseGuards(JwtAuthGuard)
+  search(@Query('q') q?: string) {
+    return this.usersService.search(q ?? '');
   }
 
     @UseGuards(JwtAuthGuard, RolesGuard)

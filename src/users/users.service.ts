@@ -113,6 +113,39 @@ async login(loginUserDto: LoginUserDto) {
     return this.userModel.find().select('-password');
   }
 
+  /** Busca cuentas por nombre de usuario, correo o bio. */
+  async search(q: string) {
+    const term = q.trim();
+
+    if (!term) {
+      return [];
+    }
+
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
+
+    return this.userModel
+      .find({
+        $or: [
+          { user_name: regex },
+          { email: regex },
+          { bio: regex },
+        ],
+      })
+      .select('-password')
+      .limit(20);
+  }
+
+  /** Cuentas aleatorias para mostrar como sugerencias. */
+  async suggestions(limit: number) {
+    const size = Math.min(Math.max(limit, 1), 20);
+
+    return this.userModel.aggregate([
+      { $sample: { size } },
+      { $project: { password: 0 } },
+    ]);
+  }
+
   async findOne(id: string) {
     return this.userModel.findById(id).select('-password');
   }
