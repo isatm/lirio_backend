@@ -88,6 +88,9 @@ async login(loginUserDto: LoginUserDto) {
     );
   }
 
+  user.last_login = new Date();
+  await user.save();
+
   const accessToken = this.authService.generateToken({
     id: user._id.toString(),
     email: user.email,
