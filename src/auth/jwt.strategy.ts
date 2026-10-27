@@ -13,6 +13,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
   ) {
 
+    const secret = configService.get<string>('JWT_SECRET');
+
+    if (!secret) {
+      throw new Error('Falta JWT_SECRET en las variables de entorno');
+    }
+
     super({
 
       jwtFromRequest:
@@ -20,8 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
       ignoreExpiration: false,
 
-      secretOrKey:
-        configService.get<string>('JWT_SECRET') || 'secret-lirio',
+      secretOrKey: secret,
 
     });
 
@@ -33,8 +38,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     user_name: string;
     role: string;
   }) {
-
-    console.log('JWT PAYLOAD:', payload);
 
     return {
 

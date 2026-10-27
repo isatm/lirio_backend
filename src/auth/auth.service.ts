@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import * as crypto from 'crypto';
-
 @Injectable()
 export class AuthService {
 
@@ -24,17 +22,7 @@ export class AuthService {
       role: user.role,
     };
 
-    const token = this.jwtService.sign(payload);
-
-    console.log(
-      'TOKEN GENERADO HASH:',
-      crypto
-        .createHash('sha256')
-        .update(token)
-        .digest('hex'),
-    );
-
-    return token;
+    return this.jwtService.sign(payload);
   }
 
 }

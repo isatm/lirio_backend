@@ -45,6 +45,11 @@ export class User {
   default: 'USER',
 })
 role: string;
+
+  @Prop({
+    type: Date,
+  })
+  last_login?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

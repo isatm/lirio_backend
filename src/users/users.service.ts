@@ -88,6 +88,9 @@ async login(loginUserDto: LoginUserDto) {
     );
   }
 
+  user.last_login = new Date();
+  await user.save();
+
   const accessToken = this.authService.generateToken({
     id: user._id.toString(),
     email: user.email,
@@ -112,6 +115,18 @@ async login(loginUserDto: LoginUserDto) {
   async findAll() {
     return this.userModel.find().select('-password');
   }
+  
+  async findPublicProfile(id: string) {
+  const user = await this.userModel
+    .findById(id)
+    .select('user_name bio'); // solo lo que se necesita mostrar
+
+  if (!user) {
+    throw new NotFoundException('Usuario no encontrado');
+  }
+
+  return user;
+}
 
   /** Busca cuentas por nombre de usuario, correo o bio. */
   async search(q: string, limit?: number) {
