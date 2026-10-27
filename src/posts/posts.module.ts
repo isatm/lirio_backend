@@ -40,6 +40,6 @@ import { CloudinaryService } from './cloudinary/cloudinary.service.js';
 
   providers: [PostsService, CloudinaryService],
 
-  exports: [PostsService],
+  exports: [PostsService, CloudinaryService],
 })
 export class PostsModule {}
