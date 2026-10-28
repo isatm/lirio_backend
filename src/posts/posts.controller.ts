@@ -95,6 +95,13 @@ export class PostsController {
     return this.postsService.getLikedPosts(user.id);
   }
 
+  @Get('saved/me')
+  @UseGuards(JwtAuthGuard)
+  getSaved(@Req() request: Request) {
+    const user = request.user as { id: string };
+    return this.postsService.getSavedPosts(user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.postsService.findOne(id);
@@ -105,6 +112,13 @@ export class PostsController {
   toggleLike(@Param('id') id: string, @Req() request: Request) {
     const user = request.user as { id: string };
     return this.postsService.toggleLike(id, user.id);
+  }
+
+  @HttpPost(':id/save')
+  @UseGuards(JwtAuthGuard)
+  toggleSave(@Param('id') id: string, @Req() request: Request) {
+    const user = request.user as { id: string };
+    return this.postsService.toggleSave(id, user.id);
   }
 
   @Patch(':id')

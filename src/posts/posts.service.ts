@@ -182,4 +182,37 @@ export class PostsService {
       .find({ liked_by: userId })
       .sort({ createdAt: -1 });
   }
+
+  async toggleSave(postId: string, userId: string) {
+    const post = await this.postModel.findById(postId);
+
+    if (!post) {
+      throw new NotFoundException('Post no encontrado');
+    }
+
+    const savedBy = post.saved_by ?? [];
+    const index = savedBy.indexOf(userId);
+
+    if (index >= 0) {
+      savedBy.splice(index, 1);
+    } else {
+      savedBy.push(userId);
+    }
+
+    post.saved_by = savedBy;
+    await post.save();
+
+    return {
+      message: index >= 0 ? 'Guardado eliminado' : 'Guardado añadido',
+      saved: index < 0,
+      savedCount: savedBy.length,
+      post,
+    };
+  }
+
+  async getSavedPosts(userId: string) {
+    return this.postModel
+      .find({ saved_by: userId })
+      .sort({ createdAt: -1 });
+  }
 }

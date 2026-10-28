@@ -41,6 +41,12 @@ export class Post {
     default: [],
   })
   liked_by: string[];
+
+  @Prop({
+    type: [String],
+    default: [],
+  })
+  saved_by: string[];
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
