@@ -1,10 +1,15 @@
 import {
+  ArrayNotEmpty,
+  IsArray,
+  IsIn,
   IsMongoId,
   IsOptional,
   IsString,
   IsUrl,
   MaxLength,
 } from 'class-validator';
+
+import { GARMENT_TYPES, type GarmentType } from '../schema/post.schema.js';
 
 export class UpdatePostDto {
   @IsOptional()
@@ -23,6 +28,12 @@ export class UpdatePostDto {
   description?: string;
 
   @IsOptional()
-  @IsMongoId({ message: 'La categoría no es válida' })
-  category_id?: string;
+  @IsArray({ message: 'Las categorías deben ser una lista' })
+  @ArrayNotEmpty({ message: 'Selecciona al menos un estilo' })
+  @IsMongoId({ each: true, message: 'La categoría no es válida' })
+  category_ids?: string[];
+
+  @IsOptional()
+  @IsIn(GARMENT_TYPES, { message: 'Tipo de prenda no válido' })
+  garment_type?: GarmentType;
 }

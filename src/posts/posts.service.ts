@@ -8,7 +8,6 @@ import { Model, Types } from 'mongoose';
 
 import { Post, PostDocument } from './schema/post.schema.js';
 import { User, UserDocument } from '../users/schema/user.schema.js';
-import { Category, CategoryDocument } from '../categories/schema/category.schema.js';
 
 import { CreatePostDto } from './dto/create-post.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
@@ -20,8 +19,6 @@ export class PostsService {
     private readonly postModel: Model<PostDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
-    @InjectModel(Category.name)
-    private readonly categoryModel: Model<CategoryDocument>,
   ) {}
 
   async create(
@@ -31,6 +28,7 @@ export class PostsService {
   ) {
     const post = await this.postModel.create({
       ...createPostDto,
+      category_ids: [createPostDto.category_ids].flat(),
       image: imageUrl,
       user_id: userId,
     });
@@ -53,7 +51,7 @@ export class PostsService {
     const size = Math.min(Math.max(limit ?? 20, 1), 50);
     const prefCount = Math.min(size, 4);
 
-    let term: string | null = null;
+    let preferred: Types.ObjectId[] = [];
 
     if (userId) {
       const currentObjectId = new Types.ObjectId(userId);
@@ -62,32 +60,16 @@ export class PostsService {
         .findById(currentObjectId)
         .select('preferred_categories');
 
-      const preferred = user?.preferred_categories ?? [];
-
-      if (preferred.length > 0) {
-        const categories = await this.categoryModel.find({
-          _id: { $in: preferred },
-        });
-
-        const names = categories
-          .map((category) => category.name)
-          .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-
-        term = names.join('|');
-      }
+      preferred = (user?.preferred_categories ?? []).map(
+        (id) => new Types.ObjectId(id),
+      );
     }
 
     let matched: any[] = [];
 
-    if (term) {
-      const regex = new RegExp(term, 'i');
-
+    if (preferred.length > 0) {
       matched = await this.postModel.aggregate([
-        {
-          $match: {
-            $or: [{ title: regex }, { description: regex }],
-          },
-        },
+        { $match: { category_ids: { $in: preferred } } },
         { $sort: { createdAt: -1 } },
         { $limit: prefCount },
       ]);
