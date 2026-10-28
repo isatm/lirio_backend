@@ -36,43 +36,43 @@ export class PostsController {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-@HttpPost()
-@UseGuards(JwtAuthGuard)
-@UseInterceptors(
-  FileInterceptor('image', {
-    storage: memoryStorage(),
-  }),
-)
-async create(
-  @Body() createPostDto: CreatePostDto,
-  @UploadedFile() file: {
-    buffer: Buffer;
-  },
-  @Req() request: Request,
-) {
-  if (!file) {
-    throw new BadRequestException(
-      'La imagen es obligatoria',
+  @HttpPost()
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+    }),
+  )
+  async create(
+    @Body() createPostDto: CreatePostDto,
+    @UploadedFile() file: {
+      buffer: Buffer;
+    },
+    @Req() request: Request,
+  ) {
+    if (!file) {
+      throw new BadRequestException(
+        'La imagen es obligatoria',
+      );
+    }
+
+    const user = request.user as {
+      id: string;
+    };
+
+    const result =
+      await this.cloudinaryService.uploadImage(file);
+
+    const imageUrl = (result as {
+      secure_url: string;
+    }).secure_url;
+
+    return this.postsService.create(
+      createPostDto,
+      user.id,
+      imageUrl,
     );
   }
-
-  const user = request.user as {
-    id: string;
-  };
-
-  const result =
-    await this.cloudinaryService.uploadImage(file);
-
-  const imageUrl = (result as {
-    secure_url: string;
-  }).secure_url;
-
-  return this.postsService.create(
-    createPostDto,
-    user.id,
-    imageUrl,
-  );
-}
 
   @Get()
   findAll() {
@@ -88,9 +88,23 @@ async create(
     );
   }
 
+  @Get('liked/me')
+  @UseGuards(JwtAuthGuard)
+  getLiked(@Req() request: Request) {
+    const user = request.user as { id: string };
+    return this.postsService.getLikedPosts(user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.postsService.findOne(id);
+  }
+
+  @HttpPost(':id/like')
+  @UseGuards(JwtAuthGuard)
+  toggleLike(@Param('id') id: string, @Req() request: Request) {
+    const user = request.user as { id: string };
+    return this.postsService.toggleLike(id, user.id);
   }
 
   @Patch(':id')

@@ -35,6 +35,12 @@ export class Post {
     required: true,
   })
   category_id: Types.ObjectId;
+
+  @Prop({
+    type: [String],
+    default: [],
+  })
+  liked_by: string[];
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

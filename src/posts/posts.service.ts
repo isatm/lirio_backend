@@ -149,4 +149,37 @@ export class PostsService {
       message: 'Post eliminado correctamente',
     };
   }
+
+  async toggleLike(postId: string, userId: string) {
+    const post = await this.postModel.findById(postId);
+
+    if (!post) {
+      throw new NotFoundException('Post no encontrado');
+    }
+
+    const likedBy = post.liked_by ?? [];
+    const index = likedBy.indexOf(userId);
+
+    if (index >= 0) {
+      likedBy.splice(index, 1);
+    } else {
+      likedBy.push(userId);
+    }
+
+    post.liked_by = likedBy;
+    await post.save();
+
+    return {
+      message: index >= 0 ? 'Like eliminado' : 'Like añadido',
+      liked: index < 0,
+      likesCount: likedBy.length,
+      post,
+    };
+  }
+
+  async getLikedPosts(userId: string) {
+    return this.postModel
+      .find({ liked_by: userId })
+      .sort({ createdAt: -1 });
+  }
 }
