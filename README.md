@@ -62,4 +62,5 @@ ifconfig  # o ip a
 | `src/users/`     | Registro, login, perfil y CRUD administrador   |
 | `src/categories/`| Catálogo de categorías (CRUD administrador)    |
 | `src/posts/`     | Publicaciones de outfits con subida a Cloudinary|
+| `src/outfits/`   | Outfits del ropero: 2-3 prendas (posts), públicos o privados |
 | `src/auth/`      | Emisión de JWT, guardias de autenticación y roles |
