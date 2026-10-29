@@ -197,4 +197,10 @@ export class PostsService {
       .find({ saved_by: userId })
       .sort({ createdAt: -1 });
   }
+
+  async getMyPosts(userId: string) {
+    return this.postModel
+      .find({ user_id: userId })
+      .sort({ createdAt: -1 });
+  }
 }

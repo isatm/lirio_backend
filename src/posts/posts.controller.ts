@@ -102,6 +102,13 @@ export class PostsController {
     return this.postsService.getSavedPosts(user.id);
   }
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  getMine(@Req() request: Request) {
+    const user = request.user as { id: string };
+    return this.postsService.getMyPosts(user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.postsService.findOne(id);
