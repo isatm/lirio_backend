@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PostsModule } from './posts/posts.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
+import { GarmentTypesModule } from './garment-types/garment-types.module.js';
 import { GarmentsModule } from './garments/garments.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { OutfitsModule } from './outfits/outfits.module.js';
@@ -23,6 +24,8 @@ import { OutfitsModule } from './outfits/outfits.module.js';
     PostsModule,
 
     CategoriesModule,
+
+    GarmentTypesModule,
 
     GarmentsModule,
     ReportsModule,

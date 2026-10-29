@@ -8,6 +8,7 @@ import { Model, Types } from 'mongoose';
 
 import { Post, PostDocument } from './schema/post.schema.js';
 import { User, UserDocument } from '../users/schema/user.schema.js';
+import { GarmentTypesService } from '../garment-types/garment-types.service.js';
 
 import { CreatePostDto } from './dto/create-post.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
@@ -19,6 +20,7 @@ export class PostsService {
     private readonly postModel: Model<PostDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly garmentTypesService: GarmentTypesService,
   ) {}
 
   async create(
@@ -26,6 +28,8 @@ export class PostsService {
     userId: string,
     imageUrl: string,
   ) {
+    await this.garmentTypesService.ensureExists(createPostDto.garment_type_id);
+
     const post = await this.postModel.create({
       ...createPostDto,
       category_ids: [createPostDto.category_ids].flat(),
@@ -97,6 +101,10 @@ export class PostsService {
   }
 
   async update(id: string, updatePostDto: UpdatePostDto) {
+    if (updatePostDto.garment_type_id) {
+      await this.garmentTypesService.ensureExists(updatePostDto.garment_type_id);
+    }
+
     const post = await this.postModel.findByIdAndUpdate(
       id,
       updatePostDto,
