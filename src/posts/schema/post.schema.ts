@@ -4,6 +4,24 @@ import { HydratedDocument, Types } from 'mongoose';
 export const GARMENT_TYPES = ['SHIRT', 'PANTS', 'SHOES'] as const;
 export type GarmentType = (typeof GARMENT_TYPES)[number];
 
+@Schema({
+  timestamps: true,
+})
+export class Comment {
+  @Prop({
+    required: true,
+  })
+  user_id: string;
+
+  @Prop({
+    required: true,
+    trim: true,
+  })
+  content: string;
+}
+
+export const CommentSchema = SchemaFactory.createForClass(Comment);
+
 export type PostDocument = HydratedDocument<Post>;
 
 @Schema({
@@ -49,6 +67,12 @@ export class Post {
     default: [],
   })
   saved_by: string[];
+
+  @Prop({
+    type: [CommentSchema],
+    default: [],
+  })
+  comments: Comment[];
 
   @Prop({
     type: String,
