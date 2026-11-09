@@ -8,7 +8,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
 import { Post, PostDocument } from '../posts/schema/post.schema.js';
-import type { GarmentType } from '../posts/schema/post.schema.js';
 import { Outfit, OutfitDocument } from './schema/outfit.schema.js';
 
 import { CreateOutfitDto, OutfitItemDto } from './dto/create-outfit.dto.js';
@@ -47,6 +46,12 @@ export class OutfitsService {
     const outfits = await this.outfitModel
       .find({ user_id: userId })
       .sort({ createdAt: -1 });
+
+    return this.toViews(outfits);
+  }
+
+  async findAllForAdmin() {
+    const outfits = await this.outfitModel.find().sort({ createdAt: -1 });
 
     return this.toViews(outfits);
   }
@@ -114,6 +119,16 @@ export class OutfitsService {
     };
   }
 
+  async removeForAdmin(id: string) {
+    const outfit = await this.findByIdOrFail(id);
+
+    await this.outfitModel.findByIdAndDelete(outfit.id);
+
+    return {
+      message: 'Outfit eliminado correctamente',
+    };
+  }
+
   private async findByIdOrFail(id: string): Promise<OutfitDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(OUTFIT_NOT_FOUND);
@@ -148,7 +163,7 @@ export class OutfitsService {
   private async buildItems(
     items: OutfitItemDto[],
     userId: string,
-  ): Promise<{ post_id: Types.ObjectId; garment_type: GarmentType }[]> {
+  ): Promise<{ post_id: Types.ObjectId; garment_type_id: Types.ObjectId }[]> {
     const ids = items.map((item) => item.post_id);
 
     if (new Set(ids).size !== ids.length) {
@@ -157,7 +172,7 @@ export class OutfitsService {
 
     const posts = await this.postModel
       .find({ _id: { $in: ids } })
-      .select('garment_type user_id saved_by');
+      .select('garment_type_id user_id saved_by');
 
     const postsById = new Map<string, PostDocument>();
 
@@ -165,7 +180,7 @@ export class OutfitsService {
       postsById.set(post.id, post);
     }
 
-    const usedTypes = new Set<GarmentType>();
+    const usedTypes = new Set<string>();
 
     return items.map((item) => {
       const post = postsById.get(item.post_id);
@@ -180,17 +195,19 @@ export class OutfitsService {
         );
       }
 
-      if (usedTypes.has(post.garment_type)) {
+      const typeId = post.garment_type_id.toString();
+
+      if (usedTypes.has(typeId)) {
         throw new BadRequestException(
           'Solo puedes elegir una prenda de cada tipo',
         );
       }
 
-      usedTypes.add(post.garment_type);
+      usedTypes.add(typeId);
 
       return {
         post_id: post._id,
-        garment_type: post.garment_type,
+        garment_type_id: post.garment_type_id,
       };
     });
   }
@@ -233,7 +250,7 @@ export class OutfitsService {
 
         return {
           post_id: item.post_id.toString(),
-          garment_type: item.garment_type,
+          garment_type_id: item.garment_type_id.toString(),
           title: post?.title ?? null,
           image: post?.image ?? null,
           is_available: isAvailable,

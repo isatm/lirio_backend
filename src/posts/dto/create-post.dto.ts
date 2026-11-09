@@ -2,14 +2,11 @@ import { Transform } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
-  IsIn,
   IsMongoId,
   IsNotEmpty,
   IsString,
   MaxLength,
 } from 'class-validator';
-
-import { GARMENT_TYPES, type GarmentType } from '../schema/post.schema.js';
 
 const toArray = ({ value }: { value: unknown }) =>
   value === undefined || value === null || Array.isArray(value) ? value : [value];
@@ -31,7 +28,7 @@ export class CreatePostDto {
   @IsMongoId({ each: true, message: 'La categoría no es válida' })
   category_ids: string[];
 
-  @IsIn(GARMENT_TYPES, { message: 'Tipo de prenda no válido' })
+  @IsMongoId({ message: 'Tipo de prenda no válido' })
   @IsNotEmpty({ message: 'El tipo de prenda es obligatorio' })
-  garment_type: GarmentType;
+  garment_type_id: string;
 }

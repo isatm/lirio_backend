@@ -1,15 +1,12 @@
 import {
   ArrayNotEmpty,
   IsArray,
-  IsIn,
   IsMongoId,
   IsOptional,
   IsString,
   IsUrl,
   MaxLength,
 } from 'class-validator';
-
-import { GARMENT_TYPES, type GarmentType } from '../schema/post.schema.js';
 
 export class UpdatePostDto {
   @IsOptional()
@@ -34,6 +31,6 @@ export class UpdatePostDto {
   category_ids?: string[];
 
   @IsOptional()
-  @IsIn(GARMENT_TYPES, { message: 'Tipo de prenda no válido' })
-  garment_type?: GarmentType;
+  @IsMongoId({ message: 'Tipo de prenda no válido' })
+  garment_type_id?: string;
 }

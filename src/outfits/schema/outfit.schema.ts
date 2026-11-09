@@ -1,11 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-import {
-  GARMENT_TYPES,
-  type GarmentType,
-} from '../../posts/schema/post.schema.js';
-
 export type OutfitDocument = HydratedDocument<Outfit>;
 
 @Schema({
@@ -20,11 +15,11 @@ export class OutfitItem {
   post_id: Types.ObjectId;
 
   @Prop({
-    type: String,
-    enum: GARMENT_TYPES,
+    type: Types.ObjectId,
+    ref: 'GarmentType',
     required: true,
   })
-  garment_type: GarmentType;
+  garment_type_id: Types.ObjectId;
 }
 
 export const OutfitItemSchema = SchemaFactory.createForClass(OutfitItem);

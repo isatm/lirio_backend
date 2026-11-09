@@ -13,6 +13,8 @@ import {
 import type { Request } from 'express';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
 import { OutfitsService } from './outfits.service.js';
 import { CreateOutfitDto } from './dto/create-outfit.dto.js';
 import { UpdateOutfitDto } from './dto/update-outfit.dto.js';
@@ -37,6 +39,20 @@ export class OutfitsController {
     const user = request.user as { id: string };
 
     return this.outfitsService.findMine(user.id);
+  }
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  findAllForAdmin() {
+    return this.outfitsService.findAllForAdmin();
+  }
+
+  @Delete('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  removeForAdmin(@Param('id') id: string) {
+    return this.outfitsService.removeForAdmin(id);
   }
 
   @Get('public')

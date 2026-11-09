@@ -79,7 +79,7 @@ export class Post {
     enum: GARMENT_TYPES,
     required: true,
   })
-  garment_type: GarmentType;
+  garment_type_id: Types.ObjectId;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
