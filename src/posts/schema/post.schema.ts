@@ -1,6 +1,27 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
+@Schema({
+  timestamps: true,
+})
+export class Comment {
+  @Prop({
+    required: true,
+  })
+  user_id: string;
+
+  @Prop({
+    required: true,
+    trim: true,
+  })
+  content: string;
+}
+
+export const CommentSchema = SchemaFactory.createForClass(Comment);
+export type CommentWithId = Comment & {
+  _id: Types.ObjectId;
+};
+
 export type PostDocument = HydratedDocument<Post>;
 
 @Schema({
@@ -53,6 +74,12 @@ export class Post {
     required: true,
   })
   garment_type_id: Types.ObjectId;
+
+  @Prop({
+    type: [CommentSchema],
+    default: [],
+  })
+  comments: CommentWithId[];
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

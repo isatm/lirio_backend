@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,8 @@ import { GarmentTypesService } from '../garment-types/garment-types.service.js';
 
 import { CreatePostDto } from './dto/create-post.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
+
+import { CreateCommentDto } from './dto/create-comment.dto.js';
 
 @Injectable()
 export class PostsService {
@@ -210,5 +213,110 @@ export class PostsService {
     return this.postModel
       .find({ user_id: userId })
       .sort({ createdAt: -1 });
+  }
+
+
+// Agregar comentario
+async addComment(
+  postId: string,
+  userId: string,
+  createCommentDto: CreateCommentDto,
+) {
+  const post = await this.postModel.findById(postId);
+
+  if (!post) {
+    throw new NotFoundException('Post no encontrado');
+  }
+
+  const content: string = createCommentDto.content.trim();
+
+  post.comments.push({
+    _id: new Types.ObjectId(),
+    user_id: userId,
+    content: content,
+  });
+
+  await post.save();
+
+  return {
+    message: 'Comentario agregado correctamente',
+    comment: post.comments[post.comments.length - 1],
+  };
+}
+
+  // Consultar comentarios
+  async getComments(postId: string) {
+    const post = await this.postModel.findById(postId);
+
+    if (!post) {
+      throw new NotFoundException('Post no encontrado');
+    }
+
+    return post.comments;
+  }
+
+  // Editar comentario
+  async updateComment(
+    postId: string,
+    commentId: string,
+    userId: string,
+    content: string,
+  ) {
+    const post = await this.postModel.findById(postId);
+
+    if (!post) {
+      throw new NotFoundException('Post no encontrado');
+    }
+
+    const comment = post.comments.find(
+      (comment) => comment._id.toString() === commentId,
+    );
+
+    if (!comment) {
+      throw new NotFoundException('Comentario no encontrado');
+    }
+
+    if (comment.user_id !== userId) {
+      throw new ForbiddenException(
+        'No puedes editar este comentario',
+      );
+    }
+
+    comment.content = content;
+    await post.save();
+
+    return {
+      message: 'Comentario actualizado correctamente',
+      comment,
+    };
+  }
+
+    // Eliminar comentario
+  async deleteComment(postId: string, commentId: string, userId: string) {
+    const post = await this.postModel.findById(postId);
+
+    if (!post) {
+      throw new NotFoundException('Publicación no encontrada');
+    }
+
+    const comment = post.comments.find(
+      (comment) => comment._id.toString() === commentId,
+    );
+
+    if (!comment) {
+      throw new NotFoundException('Comentario no encontrado');
+    }
+
+    if (comment.user_id !== userId) {
+      throw new ForbiddenException('No puedes eliminar este comentario');
+    }
+
+    post.comments = post.comments.filter(
+      (comment) => comment._id.toString() !== commentId,
+    );
+
+    await post.save();
+
+    return { message: 'Comentario eliminado correctamente' };
   }
 }

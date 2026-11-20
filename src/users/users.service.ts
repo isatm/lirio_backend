@@ -394,6 +394,11 @@ async login(loginUserDto: LoginUserDto) {
   }
 
   async remove(id: string) {
+    const user = await this.userModel.findById(id); 
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    await this.postsService.removeAllByUser(id);
     await this.userModel.findByIdAndDelete(id);
 
     return {

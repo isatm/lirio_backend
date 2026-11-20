@@ -28,6 +28,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CloudinaryService } from './cloudinary/cloudinary.service.js';
+import { Post } from './schema/post.schema.js';
+import { CreateCommentDto } from './dto/create-comment.dto.js';
+import { UpdateCommentDto } from './dto/update-comment.dto.js';
 
 @Controller('posts')
 export class PostsController {
@@ -145,4 +148,64 @@ export class PostsController {
   remove(@Param('id') id: string) {
     return this.postsService.remove(id);
   }
+
+
+  // Agregar un comentario
+  @UseGuards(JwtAuthGuard)
+  @HttpPost(':id/comments')
+  addComment(
+    @Param('id') postId: string,
+    @Body() createCommentDto: CreateCommentDto,
+    @Req() request: Request,
+  ) {
+    const userId = (request.user as { id: string }).id;
+
+    return this.postsService.addComment(
+      postId,
+      userId,
+      createCommentDto,
+    );
+  }
+
+// Obtener los comentarios de una publicación
+@Get(':id/comments')
+getComments(@Param('id') postId: string) {
+  return this.postsService.getComments(postId);
+}
+
+// Actualizar un comentario
+@UseGuards(JwtAuthGuard)
+@Patch(':id/comments/:commentId')
+updateComment(
+  @Param('id') postId: string,
+  @Param('commentId') commentId: string,
+  @Body() updateCommentDto: UpdateCommentDto,
+  @Req() request: Request,
+) {
+  const userId = (request.user as { id: string }).id;
+
+  return this.postsService.updateComment(
+    postId,
+    commentId,
+    userId,
+    updateCommentDto.content,
+  );
+}
+
+// Eliminar un comentario
+@UseGuards(JwtAuthGuard)
+@Delete(':id/comments/:commentId')
+deleteComment(
+  @Param('id') postId: string,
+  @Param('commentId') commentId: string,
+  @Req() request: Request,
+) {
+  const userId = (request.user as { id: string }).id;
+
+  return this.postsService.deleteComment(
+    postId,
+    commentId,
+    userId,
+  );
+}
 }
