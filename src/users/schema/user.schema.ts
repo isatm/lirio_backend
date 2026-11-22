@@ -34,6 +34,26 @@ export class User {
   bio?: string;
 
   @Prop({
+    default: '',
+  })
+  avatar_url?: string;
+
+  @Prop({
+    default: '',
+  })
+  avatar_public_id?: string;
+
+  @Prop({
+    default: '',
+  })
+  banner_url?: string;
+
+  @Prop({
+    default: '',
+  })
+  banner_public_id?: string;
+
+  @Prop({
     type: [String],
     default: [],
   })

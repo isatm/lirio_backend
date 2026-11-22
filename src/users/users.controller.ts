@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,10 +9,14 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 
 import type { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 import { UsersService } from './users.service.js';
 import { RegisterUserDto } from './dto/register_dto.js';
@@ -24,11 +29,34 @@ import { UpdateUserDto } from './dto/update_user.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
+import { CloudinaryService } from '../posts/cloudinary/cloudinary.service.js';
+
+const PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
+const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const profileImageOptions: NonNullable<
+  Parameters<typeof FileInterceptor>[1]
+> = {
+  storage: memoryStorage(),
+  limits: { fileSize: PROFILE_IMAGE_BYTES },
+  fileFilter: (_request, file, callback) => {
+    if (!PROFILE_IMAGE_TYPES.includes(file.mimetype)) {
+      callback(
+        new BadRequestException('La imagen debe ser JPG, PNG o WebP'),
+        false,
+      );
+      return;
+    }
+
+    callback(null, true);
+  },
+};
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @Post('register')
@@ -69,6 +97,76 @@ export class UsersController {
     return this.usersService.updatePassword(
       (request.user as { id: string }).id,
       data.new_password,
+    );
+  }
+
+    @Patch('me/avatar')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor('image', profileImageOptions))
+  async updateAvatar(
+    @Req() request: Request,
+    @UploadedFile() file: { buffer: Buffer } | undefined,
+  ) {
+    if (!file) {
+      throw new BadRequestException('La foto de perfil es obligatoria');
+    }
+
+    const image = await this.cloudinaryService.uploadImage(file, {
+      folder: 'liriohibisco/avatars',
+      transformation: [
+        { width: 600, height: 600, crop: 'fill', gravity: 'face' },
+      ],
+    });
+
+    return this.usersService.setProfileImage(
+      (request.user as { id: string }).id,
+      'avatar',
+      image,
+    );
+  }
+
+    @Delete('me/avatar')
+    @UseGuards(JwtAuthGuard)
+  removeAvatar(@Req() request: Request) {
+    return this.usersService.setProfileImage(
+      (request.user as { id: string }).id,
+      'avatar',
+      null,
+    );
+  }
+
+    @Patch('me/banner')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor('image', profileImageOptions))
+  async updateBanner(
+    @Req() request: Request,
+    @UploadedFile() file: { buffer: Buffer } | undefined,
+  ) {
+    if (!file) {
+      throw new BadRequestException('La foto de portada es obligatoria');
+    }
+
+    const image = await this.cloudinaryService.uploadImage(file, {
+      folder: 'liriohibisco/banners',
+      transformation: [
+        { width: 1600, height: 600, crop: 'fill', gravity: 'auto' },
+      ],
+    });
+
+    return this.usersService.setProfileImage(
+      (request.user as { id: string }).id,
+      'banner',
+      image,
+    );
+  }
+
+    @Delete('me/banner')
+    @UseGuards(JwtAuthGuard)
+  removeBanner(@Req() request: Request) {
+    return this.usersService.setProfileImage(
+      (request.user as { id: string }).id,
+      'banner',
+      null,
     );
   }
 

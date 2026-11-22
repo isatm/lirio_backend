@@ -63,17 +63,12 @@ export class PostsController {
       id: string;
     };
 
-    const result =
-      await this.cloudinaryService.uploadImage(file);
-
-    const imageUrl = (result as {
-      secure_url: string;
-    }).secure_url;
+    const result = await this.cloudinaryService.uploadImage(file);
 
     return this.postsService.create(
       createPostDto,
       user.id,
-      imageUrl,
+      result.url,
     );
   }
 

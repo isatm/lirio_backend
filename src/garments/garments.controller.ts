@@ -50,7 +50,7 @@ export class GarmentsController {
     const user = request.user as { id: string };
 
     const result = await this.cloudinaryService.uploadImage(file);
-    const imageUrl = (result as { secure_url: string }).secure_url;
+    const imageUrl = result.url;
 
     return this.garmentsService.create(
       createGarmentDto,
@@ -93,7 +93,7 @@ export class GarmentsController {
 
     if (file) {
       const result = await this.cloudinaryService.uploadImage(file);
-      imageUrl = (result as { secure_url: string }).secure_url;
+      imageUrl = result.url;
     }
 
     return this.garmentsService.update(

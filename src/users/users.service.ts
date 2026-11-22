@@ -18,6 +18,12 @@ import { LoginUserDto } from './dto/login_dto.js';
 
 import { AuthService } from '../auth/auth.service.js';
 import { PostsService } from '../posts/posts.service.js';
+import {
+  CloudinaryService,
+  type UploadedImage,
+} from '../posts/cloudinary/cloudinary.service.js';
+
+export type ProfileImageKind = 'avatar' | 'banner';
 
 @Injectable()
 export class UsersService {
@@ -26,6 +32,7 @@ export class UsersService {
     private readonly userModel: Model<UserDocument>,
     private readonly authService: AuthService,
     private readonly postsService: PostsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -61,6 +68,8 @@ export class UsersService {
         email: user.email,
         user_name: user.user_name,
         bio: user.bio,
+        avatar_url: user.avatar_url,
+        banner_url: user.banner_url,
         preferred_categories: user.preferred_categories,
       },
     };
@@ -107,6 +116,8 @@ async login(loginUserDto: LoginUserDto) {
       user_name: user.user_name,
       role: user.role,
       bio: user.bio,
+      avatar_url: user.avatar_url,
+      banner_url: user.banner_url,
       preferred_categories: user.preferred_categories,
     },
   };
@@ -119,7 +130,7 @@ async login(loginUserDto: LoginUserDto) {
   async findPublicProfile(id: string) {
   const user = await this.userModel
     .findById(id)
-    .select('user_name bio'); // solo lo que se necesita mostrar
+    .select('user_name bio avatar_url banner_url'); // solo lo que se necesita mostrar
 
   if (!user) {
     throw new NotFoundException('Usuario no encontrado');
@@ -375,6 +386,35 @@ async login(loginUserDto: LoginUserDto) {
     return user;
   }
 
+  /** Guarda la foto de perfil o el banner y borra la anterior de Cloudinary. */
+  async setProfileImage(
+    id: string,
+    kind: ProfileImageKind,
+    image: UploadedImage | null,
+  ) {
+    const urlField = kind === 'avatar' ? 'avatar_url' : 'banner_url';
+    const publicIdField =
+      kind === 'avatar' ? 'avatar_public_id' : 'banner_public_id';
+
+    const user = await this.userModel.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const previousPublicId = user[publicIdField];
+
+    user[urlField] = image?.url ?? '';
+    user[publicIdField] = image?.publicId ?? '';
+    await user.save();
+
+    if (previousPublicId && previousPublicId !== image?.publicId) {
+      await this.cloudinaryService.destroyImage(previousPublicId);
+    }
+
+    return this.userModel.findById(id).select('-password');
+  }
+
   async updatePassword(id: string, newPassword: string) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -388,6 +428,18 @@ async login(loginUserDto: LoginUserDto) {
   }
 
   async removeAccount(id: string) {
+    const user = await this.userModel
+      .findById(id)
+      .select('avatar_public_id banner_public_id');
+
+    if (user?.avatar_public_id) {
+      await this.cloudinaryService.destroyImage(user.avatar_public_id);
+    }
+
+    if (user?.banner_public_id) {
+      await this.cloudinaryService.destroyImage(user.banner_public_id);
+    }
+
     await this.postsService.removeAllByUser(id);
 
     return this.remove(id);
