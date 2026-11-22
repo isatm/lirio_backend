@@ -70,6 +70,7 @@ export class UsersService {
         bio: user.bio,
         avatar_url: user.avatar_url,
         banner_url: user.banner_url,
+        banner_color: user.banner_color,
         preferred_categories: user.preferred_categories,
       },
     };
@@ -118,6 +119,7 @@ async login(loginUserDto: LoginUserDto) {
       bio: user.bio,
       avatar_url: user.avatar_url,
       banner_url: user.banner_url,
+      banner_color: user.banner_color,
       preferred_categories: user.preferred_categories,
     },
   };
@@ -333,6 +335,7 @@ async login(loginUserDto: LoginUserDto) {
       user_name?: string;
       email?: string;
       bio?: string;
+      banner_color?: string;
     },
   ) {
     const conditions: Record<string, string>[] = [];
@@ -372,6 +375,22 @@ async login(loginUserDto: LoginUserDto) {
       update.bio = data.bio;
     }
 
+    if (data.banner_color !== undefined) {
+      // Un color de portada sustituye a la foto: la borra de Cloudinary y
+      // deja el registro sin banner_url para que pase a verse el color.
+      const current = await this.userModel
+        .findById(id)
+        .select('banner_public_id');
+
+      if (current?.banner_public_id) {
+        await this.cloudinaryService.destroyImage(current.banner_public_id);
+      }
+
+      update.banner_color = data.banner_color;
+      update.banner_url = '';
+      update.banner_public_id = '';
+    }
+
     const user = await this.userModel
       .findByIdAndUpdate(id, update, {
         new: true,
@@ -406,6 +425,12 @@ async login(loginUserDto: LoginUserDto) {
 
     user[urlField] = image?.url ?? '';
     user[publicIdField] = image?.publicId ?? '';
+
+    // Al subir una foto de portada se descarta el color elegido antes.
+    if (kind === 'banner') {
+      user.banner_color = '';
+    }
+
     await user.save();
 
     if (previousPublicId && previousPublicId !== image?.publicId) {

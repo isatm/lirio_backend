@@ -53,6 +53,15 @@ export class User {
   })
   banner_public_id?: string;
 
+  /**
+   * Color sólido de portada. Cuando tiene valor, el usuario no tiene foto
+   * de portada: elegirlo la borró (ver updateProfile).
+   */
+  @Prop({
+    default: '',
+  })
+  banner_color?: string;
+
   @Prop({
     type: [String],
     default: [],

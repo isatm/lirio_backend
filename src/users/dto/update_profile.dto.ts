@@ -1,11 +1,14 @@
 import {
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
+
+import { BANNER_PALETTE } from '../banner-palette.js';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -24,4 +27,9 @@ export class UpdateProfileDto {
   @IsString({ message: 'Debe ser un texto' })
   @MaxLength(200, { message: 'Máximo 200 caracteres' })
   bio?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Debe ser un texto' })
+  @IsIn(BANNER_PALETTE, { message: 'Color de portada no válido' })
+  banner_color?: string;
 }
