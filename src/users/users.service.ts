@@ -22,6 +22,7 @@ import {
   CloudinaryService,
   type UploadedImage,
 } from '../posts/cloudinary/cloudinary.service.js';
+import { FollowsService } from '../follows/follows-service/follows.service.js';
 
 export type ProfileImageKind = 'avatar' | 'banner';
 
@@ -33,6 +34,7 @@ export class UsersService {
     private readonly authService: AuthService,
     private readonly postsService: PostsService,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly followsService: FollowsService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -465,17 +467,20 @@ async login(loginUserDto: LoginUserDto) {
       await this.cloudinaryService.destroyImage(user.banner_public_id);
     }
 
-    await this.postsService.removeAllByUser(id);
-
+    // Los posts y los seguidores se borran dentro de remove.
     return this.remove(id);
   }
 
   async remove(id: string) {
-    const user = await this.userModel.findById(id); 
+    const user = await this.userModel.findById(id);
+
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
+
     await this.postsService.removeAllByUser(id);
+    // Quita las relaciones donde el usuario seguía o era seguido.
+    await this.followsService.removeAllByUser(id);
     await this.userModel.findByIdAndDelete(id);
 
     return {
