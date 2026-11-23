@@ -18,6 +18,13 @@ import { LoginUserDto } from './dto/login_dto.js';
 
 import { AuthService } from '../auth/auth.service.js';
 import { PostsService } from '../posts/posts.service.js';
+import {
+  CloudinaryService,
+  type UploadedImage,
+} from '../posts/cloudinary/cloudinary.service.js';
+import { FollowsService } from '../follows/follows-service/follows.service.js';
+
+export type ProfileImageKind = 'avatar' | 'banner';
 
 @Injectable()
 export class UsersService {
@@ -26,6 +33,8 @@ export class UsersService {
     private readonly userModel: Model<UserDocument>,
     private readonly authService: AuthService,
     private readonly postsService: PostsService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly followsService: FollowsService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -61,6 +70,9 @@ export class UsersService {
         email: user.email,
         user_name: user.user_name,
         bio: user.bio,
+        avatar_url: user.avatar_url,
+        banner_url: user.banner_url,
+        banner_color: user.banner_color,
         preferred_categories: user.preferred_categories,
       },
     };
@@ -107,6 +119,9 @@ async login(loginUserDto: LoginUserDto) {
       user_name: user.user_name,
       role: user.role,
       bio: user.bio,
+      avatar_url: user.avatar_url,
+      banner_url: user.banner_url,
+      banner_color: user.banner_color,
       preferred_categories: user.preferred_categories,
     },
   };
@@ -119,7 +134,7 @@ async login(loginUserDto: LoginUserDto) {
   async findPublicProfile(id: string) {
   const user = await this.userModel
     .findById(id)
-    .select('user_name bio'); // solo lo que se necesita mostrar
+    .select('user_name bio avatar_url banner_url'); // solo lo que se necesita mostrar
 
   if (!user) {
     throw new NotFoundException('Usuario no encontrado');
@@ -322,6 +337,7 @@ async login(loginUserDto: LoginUserDto) {
       user_name?: string;
       email?: string;
       bio?: string;
+      banner_color?: string;
     },
   ) {
     const conditions: Record<string, string>[] = [];
@@ -361,6 +377,22 @@ async login(loginUserDto: LoginUserDto) {
       update.bio = data.bio;
     }
 
+    if (data.banner_color !== undefined) {
+      // Un color de portada sustituye a la foto: la borra de Cloudinary y
+      // deja el registro sin banner_url para que pase a verse el color.
+      const current = await this.userModel
+        .findById(id)
+        .select('banner_public_id');
+
+      if (current?.banner_public_id) {
+        await this.cloudinaryService.destroyImage(current.banner_public_id);
+      }
+
+      update.banner_color = data.banner_color;
+      update.banner_url = '';
+      update.banner_public_id = '';
+    }
+
     const user = await this.userModel
       .findByIdAndUpdate(id, update, {
         new: true,
@@ -373,6 +405,41 @@ async login(loginUserDto: LoginUserDto) {
     }
 
     return user;
+  }
+
+  /** Guarda la foto de perfil o el banner y borra la anterior de Cloudinary. */
+  async setProfileImage(
+    id: string,
+    kind: ProfileImageKind,
+    image: UploadedImage | null,
+  ) {
+    const urlField = kind === 'avatar' ? 'avatar_url' : 'banner_url';
+    const publicIdField =
+      kind === 'avatar' ? 'avatar_public_id' : 'banner_public_id';
+
+    const user = await this.userModel.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const previousPublicId = user[publicIdField];
+
+    user[urlField] = image?.url ?? '';
+    user[publicIdField] = image?.publicId ?? '';
+
+    // Al subir una foto de portada se descarta el color elegido antes.
+    if (kind === 'banner') {
+      user.banner_color = '';
+    }
+
+    await user.save();
+
+    if (previousPublicId && previousPublicId !== image?.publicId) {
+      await this.cloudinaryService.destroyImage(previousPublicId);
+    }
+
+    return this.userModel.findById(id).select('-password');
   }
 
   async updatePassword(id: string, newPassword: string) {
@@ -388,12 +455,32 @@ async login(loginUserDto: LoginUserDto) {
   }
 
   async removeAccount(id: string) {
-    await this.postsService.removeAllByUser(id);
+    const user = await this.userModel
+      .findById(id)
+      .select('avatar_public_id banner_public_id');
 
+    if (user?.avatar_public_id) {
+      await this.cloudinaryService.destroyImage(user.avatar_public_id);
+    }
+
+    if (user?.banner_public_id) {
+      await this.cloudinaryService.destroyImage(user.banner_public_id);
+    }
+
+    // Los posts y los seguidores se borran dentro de remove.
     return this.remove(id);
   }
 
   async remove(id: string) {
+    const user = await this.userModel.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    await this.postsService.removeAllByUser(id);
+    // Quita las relaciones donde el usuario seguía o era seguido.
+    await this.followsService.removeAllByUser(id);
     await this.userModel.findByIdAndDelete(id);
 
     return {
