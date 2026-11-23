@@ -71,14 +71,8 @@ export class Post {
   saved_by: string[];
 
   @Prop({
-    type: [CommentSchema],
-    default: [],
-  })
-  comments: Comment[];
-
-  @Prop({
-    type: String,
-    enum: GARMENT_TYPES,
+    type: Types.ObjectId,
+    ref: 'GarmentType',
     required: true,
   })
   garment_type_id: Types.ObjectId;

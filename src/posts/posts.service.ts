@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -13,7 +12,6 @@ import { User, UserDocument } from '../users/schema/user.schema.js';
 import { GarmentTypesService } from '../garment-types/garment-types.service.js';
 
 import { CreatePostDto } from './dto/create-post.dto.js';
-import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
 
 import { CreateCommentDto } from './dto/create-comment.dto.js';
@@ -211,86 +209,10 @@ export class PostsService {
       .sort({ createdAt: -1 });
   }
 
-  private getCommentText(payload: CreateCommentDto) {
-    const text = payload?.content ?? payload?.text ?? payload?.comment;
-
-    if (typeof text !== 'string') {
-      throw new BadRequestException('El comentario es obligatorio');
-    }
-
-    const cleanedText = text.trim();
-
-    if (!cleanedText) {
-      throw new BadRequestException('El comentario no puede estar vacío');
-    }
-
-    return cleanedText;
-  }
-
-  async addComment(postId: string, userId: string, payload: CreateCommentDto) {
-    const post = await this.postModel.findById(postId);
-
-    if (!post) {
-      throw new NotFoundException('Post no encontrado');
-    }
-
-    const content = this.getCommentText(payload);
-    const comment = {
-      user_id: userId,
-      content,
-    };
-
-    post.comments = post.comments ?? [];
-    post.comments.push(comment as any);
-    await post.save();
-
-    return {
-      message: 'Comentario añadido correctamente',
-      comment: post.comments[post.comments.length - 1],
-      commentsCount: post.comments.length,
-      post,
-    };
-  }
-
-  async getComments(postId: string) {
-    const post = await this.postModel.findById(postId);
-
-    if (!post) {
-      throw new NotFoundException('Post no encontrado');
-    }
-
-    return post.comments ?? [];
-  }
-
-  async removeComment(postId: string, commentId: string, userId: string) {
-    const post = await this.postModel.findById(postId);
-
-    if (!post) {
-      throw new NotFoundException('Post no encontrado');
-    }
-
-    const commentIndex = (post.comments ?? []).findIndex(
-      (comment: any) => comment._id?.toString() === commentId,
-    );
-
-    if (commentIndex === -1) {
-      throw new NotFoundException('Comentario no encontrado');
-    }
-
-    const comment = (post.comments ?? [])[commentIndex];
-
-    if (comment.user_id !== userId) {
-      throw new ForbiddenException('No puedes eliminar este comentario');
-    }
-
-    post.comments.splice(commentIndex, 1);
-    await post.save();
-
-    return {
-      message: 'Comentario eliminado correctamente',
-      commentsCount: post.comments.length,
-      post,
-    };
+  async getMyPosts(userId: string) {
+    return this.postModel
+      .find({ user_id: userId })
+      .sort({ createdAt: -1 });
   }
 
 
