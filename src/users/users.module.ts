@@ -7,7 +7,7 @@ import { UsersService } from './users.service.js';
 import { User, UserSchema } from './schema/user.schema.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { PostsModule } from '../posts/posts.module.js';
-import { FollowsService } from '../follows/follows-service/follows.service.js';
+import { FollowsModule } from '../follows/follows-module/follows.module.js';
 
 @Module({
   imports: [
@@ -20,7 +20,7 @@ import { FollowsService } from '../follows/follows-service/follows.service.js';
     PassportModule,
     AuthModule,
     PostsModule,
-    FollowsService,
+    FollowsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],
