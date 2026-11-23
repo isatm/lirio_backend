@@ -11,6 +11,7 @@ import { GarmentsModule } from './garments/garments.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { OutfitsModule } from './outfits/outfits.module.js';
 import { FollowsModule } from './follows/follows-module/follows.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { FollowsModule } from './follows/follows-module/follows.module.js';
     OutfitsModule,
 
     FollowsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
