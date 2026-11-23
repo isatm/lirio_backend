@@ -20,6 +20,8 @@ export class Comment {
 export const CommentSchema = SchemaFactory.createForClass(Comment);
 export type CommentWithId = Comment & {
   _id: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type PostDocument = HydratedDocument<Post>;

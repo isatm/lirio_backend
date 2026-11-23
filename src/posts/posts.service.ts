@@ -234,26 +234,65 @@ async addComment(
     _id: new Types.ObjectId(),
     user_id: userId,
     content: content,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
   await post.save();
 
+  const user = await this.userModel
+  .findById(userId)
+  .select('user_name avatar_url');
+
+  const savedComment = post.comments[post.comments.length - 1];
+
   return {
-    message: 'Comentario agregado correctamente',
-    comment: post.comments[post.comments.length - 1],
+    message: 'Comentario añadido correctamente',
+    comment: {
+      _id: savedComment._id,
+      user_id: savedComment.user_id,
+      content: savedComment.content,
+      createdAt: savedComment.createdAt,
+      updatedAt: savedComment.updatedAt,
+      user_name: user?.user_name ?? 'Usuario',
+    },
+    commentsCount: post.comments.length,
   };
 }
 
   // Consultar comentarios
-  async getComments(postId: string) {
-    const post = await this.postModel.findById(postId);
+async getComments(postId: string) {
+  const post = await this.postModel.findById(postId);
 
-    if (!post) {
-      throw new NotFoundException('Post no encontrado');
-    }
-
-    return post.comments;
+  if (!post) {
+    throw new NotFoundException('Post no encontrado');
   }
+
+
+  const userIds = post.comments.map((comment) => comment.user_id);
+
+  const users = await this.userModel
+    .find({ _id: { $in: userIds } })
+    .select('user_name avatar_url');
+
+  const usersMap = new Map(
+    users.map((user) => [user._id.toString(), user]),
+  );
+
+  return post.comments.map((comment) => {
+    const user = usersMap.get(comment.user_id);
+
+    return {
+      _id: comment._id,
+      user_id: comment.user_id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      user_name: user?.user_name,
+      avatar_url: user?.avatar_url ?? '',
+    };
+  });
+}
 
   // Editar comentario
   async updateComment(
