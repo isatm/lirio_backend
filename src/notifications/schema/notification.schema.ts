@@ -5,8 +5,8 @@ export type NotificationDocument = HydratedDocument<Notification>;
 
 export enum NotificationType {
   LIKE = 'LIKE',
-  SAVE = 'SAVE',
   FOLLOW = 'FOLLOW',
+  COMMENT = 'COMMENT',
 }
 
 @Schema({

@@ -62,6 +62,15 @@ export class User {
   })
   banner_color?: string;
 
+  /**
+   * ExpoPushToken del teléfono donde inició sesión (push Android).
+   * Vacío = no recibe avisos push. No se expone en ninguna respuesta.
+   */
+  @Prop({
+    default: '',
+  })
+  push_token?: string;
+
   @Prop({
     type: [String],
     default: [],

@@ -23,6 +23,7 @@ import {
   type UploadedImage,
 } from '../posts/cloudinary/cloudinary.service.js';
 import { FollowsService } from '../follows/follows-service/follows.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 export type ProfileImageKind = 'avatar' | 'banner';
 
@@ -35,6 +36,7 @@ export class UsersService {
     private readonly postsService: PostsService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly followsService: FollowsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -128,7 +130,7 @@ async login(loginUserDto: LoginUserDto) {
 }
 
   async findAll() {
-    return this.userModel.find().select('-password');
+    return this.userModel.find().select('-password -push_token');
   }
   
   async findPublicProfile(id: string) {
@@ -163,7 +165,7 @@ async login(loginUserDto: LoginUserDto) {
           { bio: regex },
         ],
       })
-      .select('-password')
+      .select('-password -push_token')
       .limit(size);
   }
 
@@ -208,7 +210,7 @@ async login(loginUserDto: LoginUserDto) {
           },
           { $sort: { matches: -1, createdAt: -1 } },
           { $limit: prefCount },
-          { $project: { password: 0 } },
+          { $project: { password: 0, push_token: 0 } },
         ]);
       }
     }
@@ -224,14 +226,14 @@ async login(loginUserDto: LoginUserDto) {
         },
       },
       { $sample: { size: Math.max(size - matchedIds.length, 0) } },
-      { $project: { password: 0 } },
+      { $project: { password: 0, push_token: 0 } },
     ]);
 
     return [...matched, ...random].slice(0, size);
   }
 
   async findOne(id: string) {
-    return this.userModel.findById(id).select('-password');
+    return this.userModel.findById(id).select('-password -push_token');
   }
 
   /** El administrador crea cuentas con el rol que elija. */
@@ -303,7 +305,7 @@ async login(loginUserDto: LoginUserDto) {
         new: true,
         runValidators: true,
       })
-      .select('-password');
+      .select('-password -push_token');
   }
 
   /** Verifica que el email o el nombre de usuario no estén en uso. */
@@ -398,7 +400,7 @@ async login(loginUserDto: LoginUserDto) {
         new: true,
         runValidators: true,
       })
-      .select('-password');
+      .select('-password -push_token');
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -439,7 +441,30 @@ async login(loginUserDto: LoginUserDto) {
       await this.cloudinaryService.destroyImage(previousPublicId);
     }
 
-    return this.userModel.findById(id).select('-password');
+    return this.userModel.findById(id).select('-password -push_token');
+  }
+
+  /** Guarda el token del teléfono; null lo borra (el usuario apagó los avisos). */
+  async updatePushToken(id: string, token: string | null) {
+    if (token) {
+      // Un teléfono pertenece a una sola cuenta: se le quita a cualquier otra
+      // que lo tuviera registrado antes.
+      await this.userModel.updateMany(
+        { push_token: token, _id: { $ne: id } },
+        { $set: { push_token: '' } },
+      );
+    }
+
+    await this.userModel.updateOne(
+      { _id: id },
+      { $set: { push_token: token ?? '' } },
+    );
+
+    return {
+      message: token
+        ? 'Notificaciones push activadas'
+        : 'Notificaciones push desactivadas',
+    };
   }
 
   async updatePassword(id: string, newPassword: string) {
@@ -481,6 +506,8 @@ async login(loginUserDto: LoginUserDto) {
     await this.postsService.removeAllByUser(id);
     // Quita las relaciones donde el usuario seguía o era seguido.
     await this.followsService.removeAllByUser(id);
+    // Quita avisos donde era destinatario o remitente.
+    await this.notificationsService.removeAllByUser(id);
     await this.userModel.findByIdAndDelete(id);
 
     return {

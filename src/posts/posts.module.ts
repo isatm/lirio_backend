@@ -15,6 +15,7 @@ import { Category, CategorySchema } from '../categories/schema/category.schema.j
 
 import { AuthModule } from '../auth/auth.module.js';
 import { GarmentTypesModule } from '../garment-types/garment-types.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 import { CloudinaryService } from './cloudinary/cloudinary.service.js';
 @Module({
@@ -36,6 +37,7 @@ import { CloudinaryService } from './cloudinary/cloudinary.service.js';
 
     AuthModule,
     GarmentTypesModule,
+    NotificationsModule,
   ],
 
   controllers: [PostsController],

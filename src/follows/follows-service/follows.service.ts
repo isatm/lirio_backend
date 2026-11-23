@@ -8,6 +8,8 @@ import { Model, Types } from 'mongoose';
 
 import { Follow, FollowDocument } from '../schema/follow.schema.js';
 import { User, UserDocument } from '../../users/schema/user.schema.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
+import { NotificationType } from '../../notifications/schema/notification.schema.js';
 
 @Injectable()
 export class FollowsService {
@@ -16,6 +18,7 @@ export class FollowsService {
     private readonly followModel: Model<FollowDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly notificationsService: NotificationsService,
     ) {}
 
   /** Convierte un texto en ObjectId o rechaza el valor. */
@@ -46,11 +49,25 @@ export class FollowsService {
     }
 
     // El upsert es atómico y el índice único evita duplicados.
-    await this.followModel.updateOne(
+    const result = await this.followModel.updateOne(
         { follower: me, following: target },
         { $setOnInsert: { follower: me, following: target } },
         { upsert: true },
     );
+
+    // Solo se avisa cuando la relación se creó de verdad, no al re-seguir.
+    if (result.upsertedCount > 0) {
+        try {
+            await this.notificationsService.create(
+                targetId,
+                currentUserId,
+                NotificationType.FOLLOW,
+                'comenzó a seguirte',
+            );
+        } catch {
+            // El seguimiento ya quedó guardado.
+        }
+    }
 
     return {
         following: true,

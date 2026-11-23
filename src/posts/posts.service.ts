@@ -10,6 +10,8 @@ import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from './schema/post.schema.js';
 import { User, UserDocument } from '../users/schema/user.schema.js';
 import { GarmentTypesService } from '../garment-types/garment-types.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { NotificationType } from '../notifications/schema/notification.schema.js';
 
 import { CreatePostDto } from './dto/create-post.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
@@ -24,7 +26,29 @@ export class PostsService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly garmentTypesService: GarmentTypesService,
+    private readonly notificationsService: NotificationsService,
   ) {}
+
+  /** Una notificación fallida nunca debe romper la acción que la originó. */
+  private async notify(
+    recipientId: string,
+    senderId: string,
+    type: NotificationType,
+    message: string,
+    postId?: string,
+  ) {
+    try {
+      await this.notificationsService.create(
+        recipientId,
+        senderId,
+        type,
+        message,
+        postId,
+      );
+    } catch {
+      // El like o el comentario ya quedó guardado.
+    }
+  }
 
   async create(
     createPostDto: CreatePostDto,
@@ -162,6 +186,16 @@ export class PostsService {
     post.liked_by = likedBy;
     await post.save();
 
+    if (index < 0) {
+      await this.notify(
+        post.user_id,
+        userId,
+        NotificationType.LIKE,
+        'le gustó tu publicación',
+        postId,
+      );
+    }
+
     return {
       message: index >= 0 ? 'Like eliminado' : 'Like añadido',
       liked: index < 0,
@@ -239,6 +273,14 @@ async addComment(
   });
 
   await post.save();
+
+  await this.notify(
+    post.user_id,
+    userId,
+    NotificationType.COMMENT,
+    'comentó tu publicación',
+    postId,
+  );
 
   const user = await this.userModel
   .findById(userId)

@@ -23,6 +23,7 @@ import { RegisterUserDto } from './dto/register_dto.js';
 import { LoginUserDto } from './dto/login_dto.js';
 import { UpdateProfileDto } from './dto/update_profile.dto.js';
 import { UpdatePasswordDto } from './dto/update_password.dto.js';
+import { UpdatePushTokenDto } from './dto/update_push_token.dto.js';
 import { CreateUserDto } from './dto/create_user.dto.js';
 import { UpdateUserDto } from './dto/update_user.dto.js';
 
@@ -97,6 +98,18 @@ export class UsersController {
     return this.usersService.updatePassword(
       (request.user as { id: string }).id,
       data.new_password,
+    );
+  }
+
+    @Patch('me/push-token')
+    @UseGuards(JwtAuthGuard)
+  updatePushToken(
+    @Req() request: Request,
+    @Body() data: UpdatePushTokenDto,
+  ) {
+    return this.usersService.updatePushToken(
+      (request.user as { id: string }).id,
+      data.token,
     );
   }
 

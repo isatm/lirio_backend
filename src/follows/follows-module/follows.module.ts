@@ -7,6 +7,7 @@ import { FollowsService } from '../follows-service/follows.service.js';
 import { Follow, FollowSchema } from '../schema/follow.schema.js';
 import { User, UserSchema } from '../../users/schema/user.schema.js';
 import { AuthModule } from '../../auth/auth.module.js';
+import { NotificationsModule } from '../../notifications/notifications.module.js';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from '../../auth/auth.module.js';
     ]),
     PassportModule,
     AuthModule,
+    NotificationsModule,
     ],
     controllers: [FollowsController],
     providers: [FollowsService],

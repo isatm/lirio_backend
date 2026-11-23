@@ -8,6 +8,7 @@ import { User, UserSchema } from './schema/user.schema.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { PostsModule } from '../posts/posts.module.js';
 import { FollowsModule } from '../follows/follows-module/follows.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { FollowsModule } from '../follows/follows-module/follows.module.js';
     AuthModule,
     PostsModule,
     FollowsModule,
+    NotificationsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],
