@@ -15,6 +15,7 @@ import type { Request } from 'express';
 
 import { PostsService } from './posts.service.js';
 import { CreatePostDto } from './dto/create-post.dto.js';
+import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -124,6 +125,34 @@ export class PostsController {
   toggleSave(@Param('id') id: string, @Req() request: Request) {
     const user = request.user as { id: string };
     return this.postsService.toggleSave(id, user.id);
+  }
+
+  @Get(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  getComments(@Param('id') id: string) {
+    return this.postsService.getComments(id);
+  }
+
+  @HttpPost(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  addComment(
+    @Param('id') id: string,
+    @Body() payload: CreateCommentDto,
+    @Req() request: Request,
+  ) {
+    const user = request.user as { id: string };
+    return this.postsService.addComment(id, user.id, payload);
+  }
+
+  @Delete(':id/comments/:commentId')
+  @UseGuards(JwtAuthGuard)
+  removeComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Req() request: Request,
+  ) {
+    const user = request.user as { id: string };
+    return this.postsService.removeComment(id, commentId, user.id);
   }
 
   @Patch(':id')
